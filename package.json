@@ -31,7 +31,7 @@
     "cerebral"
   ],
   "dependencies": {
-    "cerebral": "^0.14.0",
+    "cerebral": "^0.15.0",
     "tcomb": "^2.2.0"
   }
 }

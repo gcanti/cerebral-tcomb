@@ -21,24 +21,21 @@ function factory(initialState, defaultArgs, Type) {
 
   var controller = cerebral.Controller({
 
-    // Note: missing description in README.md
     defaultArgs: defaultArgs,
 
     onReset: function () {
       state = initialState;
     },
 
-    // Note: missing implementation in the cerebral-react-baobab package
     onError: function (error) {
       eventEmitter.emit('error', error);
     },
 
-    // Note: missing description in README.md
     onGetRecordingState: function () {
       return state;
     },
 
-    onSeek: function (seek, isPlaying, currentRecording) {
+    onSeek: function (seek, isPlaying, recording) {
       state = recording.initialState;
       eventEmitter.emit('change', state);
     },
@@ -61,9 +58,15 @@ function factory(initialState, defaultArgs, Type) {
       });
     },
 
-    onUnset: function (path, key) {
-      applySpec(path.concat(key), function (field) {
+    onUnset: function (path) {
+      applySpec(path, function (field) {
         field.$set = null;
+      });
+    },
+
+    onConcat: function (path, value) {
+      applySpec(path, function (field) {
+        field.$push = value;
       });
     },
 
@@ -80,20 +83,7 @@ function factory(initialState, defaultArgs, Type) {
       });
     },
 
-    onMerge: function (path, value) {
-      applySpec(path, function (field) {
-        field.$merge = value;
-      });
-    },
-
-    onConcat: function (path, value) {
-      applySpec(path, function (field) {
-        field.$push = value;
-      });
-    },
-
     onPop: function (path) {
-      // FIXME: failing now for https://github.com/christianalfoni/cerebral/issues/59
       applySpec(path, function (field) {
         field.$apply = function (value) {
           return value.slice(0, value.length - 1);
@@ -102,7 +92,6 @@ function factory(initialState, defaultArgs, Type) {
     },
 
     onShift: function (path) {
-      // FIXME: failing now for https://github.com/christianalfoni/cerebral/issues/59
       applySpec(path, function (field) {
         field.$apply = function (value) {
           return value.slice(1);
@@ -112,9 +101,13 @@ function factory(initialState, defaultArgs, Type) {
 
     onUnshift: function (path, value) {
       applySpec(path, function (field) {
-        field.$apply = function (arr) {
-          return [value].concat(arr);
-        };
+        field.$unshift = [value];
+      });
+    },
+
+    onMerge: function (path, value) {
+      applySpec(path, function (field) {
+        field.$merge = value;
       });
     }
 
