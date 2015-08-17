@@ -46,7 +46,7 @@ var defaultInput = {};
 var model = Model(initialState, State);
 
 // instantiate the controller
-var controller = Controller(, defaultInput);
+var controller = Controller(model, defaultInput);
 
 controller.signal('test', function (input, state, output) {
   // use the API here
