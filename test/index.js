@@ -1,8 +1,9 @@
 var tape = require('tape');
-var Controller = require('../.');
-var t = Controller.t;
+var Controller = require('cerebral');
+var Model = require('../.');
+var t = Model.t;
 
-var Type = t.struct({
+var State = t.struct({
   email: t.maybe(t.String),
   profile: t.struct({
     age: t.maybe(t.Number)
@@ -11,20 +12,24 @@ var Type = t.struct({
   other: t.Any
 });
 
-var initialState = {
+var initialState = State({
   email: 'a@domain.com',
   profile: {
     age: 41
   },
   tags: ['web developer'],
   other: {a: 1}
-};
+});
+
+function getController() {
+  return Controller(Model(initialState));
+}
 
 tape('controller', function (tape) {
 
   tape.test('get', function (assert) {
     assert.plan(2);
-    var controller = Controller(initialState, null, Type);
+    var controller = getController();
     controller.signal('test', function (input, state, output) {
       assert.strictEqual(controller.get('email'), 'a@domain.com', 'path as string');
       assert.strictEqual(controller.get(['email']), 'a@domain.com', 'path as array');
@@ -33,20 +38,23 @@ tape('controller', function (tape) {
   });
 
   tape.test('set', function (assert) {
-    assert.plan(2);
-    var controller = Controller(initialState, null, Type);
+    assert.plan(3);
+    var controller = getController();
     controller.signal('test', function (input, state, output) {
       state.set('email', 'b@domain.com', 'path as string');
       assert.strictEqual(controller.get('email'), 'b@domain.com');
       state.set(['profile', 'age'], 42, 'path as array');
       assert.strictEqual(controller.get(['profile', 'age']), 42);
+      assert.throws(function () {
+        state.set('profile', null);
+      });
     });
     controller.signals.test();
   });
 
   tape.test('unset', function (assert) {
     assert.plan(2);
-    var controller = Controller(initialState, null, Type);
+    var controller = getController();
     controller.signal('test', function (input, state, output) {
       state.unset('email');
       assert.strictEqual(controller.get('email'), null, 'path as string');
@@ -58,7 +66,7 @@ tape('controller', function (tape) {
 
   tape.test('concat', function (assert) {
     assert.plan(1);
-    var controller = Controller(initialState, null, Type);
+    var controller = getController();
     controller.signal('test', function (input, state, output) {
       state.concat('tags', ['rock climber', 'SF reader']);
       assert.deepEqual(controller.get('tags'), ['web developer', 'rock climber', 'SF reader']);
@@ -68,7 +76,7 @@ tape('controller', function (tape) {
 
   tape.test('push', function (assert) {
     assert.plan(1);
-    var controller = Controller(initialState, null, Type);
+    var controller = getController();
     controller.signal('test', function (input, state, output) {
       state.push('tags', 'rock climber');
       assert.deepEqual(controller.get('tags'), ['web developer', 'rock climber']);
@@ -78,7 +86,7 @@ tape('controller', function (tape) {
 
   tape.test('splice', function (assert) {
     assert.plan(1);
-    var controller = Controller(initialState, null, Type);
+    var controller = getController();
     controller.signal('test', function (input, state, output) {
       state.set('tags', ['web developer', 'rock climber', 'SF reader'])
       state.splice('tags', [1, 1], [1, 1, 'bass player']);
@@ -89,7 +97,7 @@ tape('controller', function (tape) {
 
   tape.test('merge', function (assert) {
     assert.plan(2);
-    var controller = Controller(initialState, null, Type);
+    var controller = getController();
     controller.signal('test', function (input, state, output) {
       state.merge(['other'], {b: 2});
       assert.deepEqual(controller.get('other'), {a: 1, b: 2});
@@ -101,7 +109,7 @@ tape('controller', function (tape) {
 
   tape.test('pop', function (assert) {
     assert.plan(1);
-    var controller = Controller(initialState, null, Type);
+    var controller = getController();
     controller.signal('test', function (input, state, output) {
       state.pop('tags');
       assert.deepEqual(controller.get('tags'), []);
@@ -111,7 +119,7 @@ tape('controller', function (tape) {
 
   tape.test('shift', function (assert) {
     assert.plan(1);
-    var controller = Controller(initialState, null, Type);
+    var controller = getController();
     controller.signal('test', function (input, state, output) {
       state.shift('tags');
       assert.deepEqual(controller.get('tags'), []);
@@ -121,7 +129,7 @@ tape('controller', function (tape) {
 
   tape.test('unshift', function (assert) {
     assert.plan(1);
-    var controller = Controller(initialState, null, Type);
+    var controller = getController();
     controller.signal('test', function (input, state, output) {
       state.unshift('tags', 'rock climber');
       assert.deepEqual(controller.get('tags'), ['rock climber', 'web developer']);

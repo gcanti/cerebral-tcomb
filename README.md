@@ -1,40 +1,52 @@
-# cerebral-tcomb
-
-A Cerebral package with tcomb
+immutable and type checked model layer for [cerebral](https://github.com/christianalfoni/cerebral) based on [tcomb](https://github.com/gcanti/tcomb)
 
 # API
 
-## How to instantiate a cerebral-tcomb controller
+*Note. If you don't know how to define types with tcomb you may want to take a look at its [README](https://github.com/gcanti/tcomb/blob/master/README.md) or the [GUIDE](https://github.com/gcanti/tcomb/blob/master/GUIDE.md).*
+
+## model API
 
 ```js
-var Controller = require('cerebral-tcomb');
-var t = Controller.t;
+Model(initialState, [State])
+```
 
-// define the type of the state
-var Type = t.struct({
-  email: t.maybe(t.String),
+**Example**
+
+```js
+var Controller = require('cerebral');
+var Model = require('cerebral-tcomb');
+var t = Model.t; // the tcomb library is re-exported
+
+// define the state type
+var State = t.struct({
+  email: t.String,
   profile: t.struct({
-    age: t.maybe(t.Number)
+    age: t.Number
   }),
   tags: t.list(t.String),
   other: t.Any
 });
 
 // the initial state of the application
-var initialState = {
+var initialState = State({
   email: 'a@domain.com',
   profile: {
     age: 41
   },
   tags: ['web developer'],
   other: {a: 1}
-};
+});
 
 // any default input you want each action to receive
 var defaultInput = {};
 
 // instantiate the controller
-var controller = Controller(initialState, defaultInput, Type);
+// the argument `State` is optional, by default its value
+// is the initialState's constructor
+var model = Model(initialState, State);
+
+// instantiate the controller
+var controller = Controller(, defaultInput);
 
 controller.signal('test', function (input, state, output) {
   // use the API here
@@ -68,8 +80,8 @@ state.set(['profile', 'age'], 42);
 Same as `set(path, null)`.
 
 ```js
-state.unset('email');
-state.unset(['profile', 'age']);
+state.unset('email'); // it throws if email is not a t.maybe(t.String)
+state.unset(['profile', 'age']); // it throws if profile.age is not a t.maybe(t.Number)
 ```
 
 ### concat(path: Path, value: t.Array)

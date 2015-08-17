@@ -1,121 +1,104 @@
-var cerebral = require('cerebral');
 var t = require('tcomb');
-var EventEmitter = require('events').EventEmitter;
-var Value = cerebral.Value;
 
-function factory(initialState, defaultArgs, Type) {
+function getValue(path, obj) {
+  path = path.slice();
+  while (path.length) {
+    obj = obj[path.shift()];
+  }
+  return obj;
+}
 
-  var eventEmitter = new EventEmitter();
-  initialState = Type(initialState);
+function factory(initialState, State) {
+
+  // the argument `State` is optional, by default its value
+  // is the initialState's constructor
+  State = State || initialState.constructor;
+  initialState = State(initialState);
   var state = initialState;
 
-  function applySpec(path, cb) {
+  function applySpec(path, setField) {
     var spec = {};
     var field = spec;
     for (var i = 0, len = path.length; i < len; i++ ) {
       field = field[path[i]] = {};
     }
-    cb(field);
-    state = Type.update(state, spec);
+    setField(field);
+    state = State.update(state, spec);
   }
 
-  var controller = cerebral.Controller({
+  return function (controller) {
 
-    defaultArgs: defaultArgs,
-
-    onReset: function () {
+    controller.on('reset', function () {
       state = initialState;
-    },
+    });
 
-    onError: function (error) {
-      eventEmitter.emit('error', error);
-    },
-
-    onGetRecordingState: function () {
-      return state;
-    },
-
-    onSeek: function (seek, isPlaying, recording) {
+    controller.on('seek', function (seek, isPlaying, recording) {
       state = recording.initialState;
-      eventEmitter.emit('change', state);
-    },
+    });
 
-    onUpdate: function () {
-      eventEmitter.emit('change', state);
-    },
+    return {
+      get: function get(path) {
+        return getValue(path, state);
+      },
+      getRecordingState: function getRecordingState() {
+        return state;
+      },
+      mutators: {
+        set: function set(path, value) {
+          applySpec(path, function (field) {
+            field.$set = value;
+          });
+        },
+        unset: function unset(path) {
+          applySpec(path, function (field) {
+            field.$set = null;
+          });
+        },
+        push: function push(path, value) {
+          applySpec(path, function (field) {
+            field.$push = [value];
+          });
+        },
+        splice: function splice(path) {
+          var args = Array.prototype.slice.call(arguments, 1);
+          applySpec(path, function (field) {
+            field.$splice = args;
+          });
+        },
+        merge: function merge(path, value) {
+          applySpec(path, function (field) {
+            field.$merge = value;
+          });
+        },
+        concat: function concat(path, value) {
+          applySpec(path, function (field) {
+            field.$push = value;
+          });
+        },
+        pop: function pop(path) {
+          applySpec(path, function (field) {
+            field.$apply = function (value) {
+              return value.slice(0, value.length - 1);
+            };
+          });
+        },
+        shift: function shift(path) {
+          applySpec(path, function (field) {
+            field.$apply = function (value) {
+              return value.slice(1);
+            };
+          });
+        },
+        unshift: function unshift(path, value) {
+          applySpec(path, function (field) {
+            field.$unshift = [value];
+          });
+        }
+      }
+    };
 
-    onRemember: function () {
-      eventEmitter.emit('remember', state);
-    },
+  };
 
-    onGet: function (path) {
-      return Value(path, state);
-    },
-
-    onSet: function (path, value) {
-      applySpec(path, function (field) {
-        field.$set = value;
-      });
-    },
-
-    onUnset: function (path) {
-      applySpec(path, function (field) {
-        field.$set = null;
-      });
-    },
-
-    onConcat: function (path, value) {
-      applySpec(path, function (field) {
-        field.$push = value;
-      });
-    },
-
-    onPush: function (path, value) {
-      applySpec(path, function (field) {
-        field.$push = [value];
-      });
-    },
-
-    onSplice: function (path) {
-      var args = Array.prototype.slice.call(arguments, 1);
-      applySpec(path, function (field) {
-        field.$splice = args;
-      });
-    },
-
-    onPop: function (path) {
-      applySpec(path, function (field) {
-        field.$apply = function (value) {
-          return value.slice(0, value.length - 1);
-        };
-      });
-    },
-
-    onShift: function (path) {
-      applySpec(path, function (field) {
-        field.$apply = function (value) {
-          return value.slice(1);
-        };
-      });
-    },
-
-    onUnshift: function (path, value) {
-      applySpec(path, function (field) {
-        field.$unshift = [value];
-      });
-    },
-
-    onMerge: function (path, value) {
-      applySpec(path, function (field) {
-        field.$merge = value;
-      });
-    }
-
-  });
-
-  controller.eventEmitter = eventEmitter;
-
-  return controller;
 }
 
 // re-export tcomb
