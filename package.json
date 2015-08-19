@@ -1,6 +1,6 @@
 {
   "name": "cerebral-tcomb",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "immutable and type checked model layer for cerebral",
   "main": "index.js",
   "scripts": {
@@ -18,8 +18,7 @@
   },
   "homepage": "https://github.com/gcanti/cerebral-tcomb",
   "devDependencies": {
-    "eslint": "^1.1.0",
-    "mocha": "^2.2.5",
+    "eslint": "^1.2.0",
     "tape": "^4.0.3"
   },
   "tags": [
