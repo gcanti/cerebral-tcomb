@@ -1,6 +1,6 @@
 {
   "name": "cerebral-tcomb",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "immutable and type checked model layer for cerebral",
   "main": "index.js",
   "scripts": {
@@ -30,7 +30,7 @@
     "cerebral"
   ],
   "dependencies": {
-    "cerebral": "^0.17.0",
+    "cerebral": ">=0.17.0",
     "tcomb": "^2.2.0"
   }
 }
